@@ -1,0 +1,6 @@
+@extends('layout')
+@section('content')
+<h1>Cuidado com o equipamento.<br>Clareza no atendimento.</h1><p>Acompanhe diagnósticos, aprove orçamentos e consulte cada etapa do serviço.</p>
+<div class="grid"><form method="post" action="/login" class="card">@csrf<h2>Entrar</h2><label for="email">E-mail</label><input id="email" name="email" type="email" required autocomplete="username" value="{{ old('email') }}"><label for="password">Senha</label><input id="password" name="password" type="password" required autocomplete="current-password"><button>Acessar ordens</button></form>
+<form method="post" action="/register" class="card">@csrf<h2>Primeiro atendimento?</h2><label for="name">Nome</label><input id="name" name="name" required maxlength="120" value="{{ old('name') }}"><label for="new-email">E-mail</label><input id="new-email" name="email" type="email" required autocomplete="username"><label for="new-password">Senha (8 a 64 caracteres ASCII, letras e números)</label><input id="new-password" name="password" type="password" required minlength="8" maxlength="64" autocomplete="new-password"><label for="confirmation">Confirme a senha</label><input id="confirmation" name="password_confirmation" type="password" required autocomplete="new-password"><button class="secondary">Criar conta</button></form></div>
+@endsection

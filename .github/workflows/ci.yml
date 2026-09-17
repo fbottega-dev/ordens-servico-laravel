@@ -1,0 +1,31 @@
+name: Laravel CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, pdo_mysql
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+      - run: vendor/bin/pint --test
+      - run: composer audit
+      - name: MySQL container smoke
+        run: |
+          export DB_PASSWORD=ci-local-password
+          export APP_KEY=$(php artisan key:generate --show)
+          docker compose up -d --build --wait
+          docker compose exec -T app php artisan migrate --force
+          docker compose exec -T app php artisan db:seed --force
+          curl --retry 15 --retry-connrefused --retry-delay 2 -fsS http://localhost:8083/login > /dev/null
+      - if: failure()
+        run: DB_PASSWORD=ci-local-password APP_KEY=unused docker compose logs
+      - if: always()
+        run: DB_PASSWORD=ci-local-password APP_KEY=unused docker compose down -v

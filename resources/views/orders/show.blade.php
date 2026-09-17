@@ -1,0 +1,11 @@
+@extends('layout')
+@section('content')
+<p><a href="{{ route('orders.index') }}">← Todas as ordens</a></p><span class="badge">{{ $order->statusLabel() }}</span><h1>#{{ $order->id }} · {{ $order->equipment }}</h1>
+<div class="grid"><section class="card"><h2>Detalhes do atendimento</h2><p><strong>Cliente:</strong> {{ $order->customer->name }}</p><p><strong>Número de série:</strong> {{ $order->serial_number ?: 'Não informado' }}</p><p style="white-space:pre-wrap">{{ $order->description }}</p>
+@if($order->quote_cents !== null)<h2>Orçamento: R$ {{ number_format($order->quote_cents / 100,2,',','.') }}</h2><p>{{ $order->diagnosis }}</p>@endif
+@if(auth()->user()->role==='staff' && $order->status==='received')<form method="post" action="{{ route('orders.transition',$order) }}">@csrf<input type="hidden" name="action" value="quote"><label for="diagnosis">Diagnóstico</label><textarea id="diagnosis" name="diagnosis" required maxlength="4000"></textarea><label for="quote">Orçamento em centavos (15000 = R$ 150,00)</label><input id="quote" name="quote_cents" type="number" min="1" max="100000000" required><button>Enviar orçamento</button></form>@endif
+@foreach(['approve'=>'Aprovar orçamento','start'=>'Iniciar serviço','complete'=>'Concluir serviço','cancel'=>'Cancelar solicitação'] as $action=>$label)
+@if(($action==='approve' && $order->user_id===auth()->id() && $order->status==='quoted') || ($action==='start' && auth()->user()->role==='staff' && $order->status==='approved') || ($action==='complete' && auth()->user()->role==='staff' && $order->status==='in_progress') || ($action==='cancel' && $order->user_id===auth()->id() && in_array($order->status,['received','quoted'])))
+<form method="post" action="{{ route('orders.transition',$order) }}">@csrf<input type="hidden" name="action" value="{{ $action }}"><button>{{ $label }}</button></form>@endif
+@endforeach</section><section class="card"><h2>Histórico</h2>@foreach($order->events as $event)<article class="ticket"><strong>{{ ['created'=>'Solicitação aberta','quote'=>'Orçamento enviado','approve'=>'Orçamento aprovado','start'=>'Serviço iniciado','complete'=>'Serviço concluído','cancel'=>'Solicitação cancelada'][$event->action] }}</strong><p>{{ $event->actor->name }} · {{ $event->created_at->format('d/m/Y H:i') }}</p></article>@endforeach</section></div>
+@endsection
